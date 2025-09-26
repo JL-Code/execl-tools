@@ -1,5 +1,5 @@
-# Excel文件拆分工具构建脚本 (Windows PowerShell版本)
-# 使用方法: .\build.ps1
+# Excel File Split Tool Build Script (Windows PowerShell)
+# Usage: .\build.ps1
 param(
     [switch]$Clean,
     [switch]$NoVenv,
@@ -7,7 +7,17 @@ param(
     [switch]$Dev
 )
 
-# 设置错误处理
+# Set console encoding to UTF-8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8
+
+# Set PowerShell output encoding
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
+
+# Change console code page to UTF-8
+chcp 65001 | Out-Null
+
+# Set error handling
 $ErrorActionPreference = "Stop"
 
 function Write-ColorMessage {
@@ -58,7 +68,7 @@ function New-DesktopShortcut {
 function New-InstallerScript {
     Write-ColorMessage "Creating installer scripts..." "Yellow"
     
-    # 创建安装脚本
+    # Create installer script with proper encoding
     $installerScript = @'
 @echo off
 chcp 65001 >nul
@@ -88,7 +98,7 @@ if not exist "%INSTALL_DIR%" (
 
 REM Copy executable
 echo Copying program files...
-copy "Excel文件拆分工具.exe" "%INSTALL_DIR%\" >nul
+copy "ExcelFileSplitTool.exe" "%INSTALL_DIR%\" >nul
 if %errorlevel% neq 0 (
     echo Error: Unable to copy program files
     pause
@@ -97,14 +107,14 @@ if %errorlevel% neq 0 (
 
 REM Create desktop shortcut
 echo Creating desktop shortcut...
-powershell -Command "& {$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\Excel文件拆分工具.lnk'); $Shortcut.TargetPath = '%INSTALL_DIR%\Excel文件拆分工具.exe'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Description = 'Excel File Split Tool'; $Shortcut.Save()}"
+powershell -Command "& {$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\ExcelFileSplitTool.lnk'); $Shortcut.TargetPath = '%INSTALL_DIR%\ExcelFileSplitTool.exe'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Description = 'Excel File Split Tool'; $Shortcut.Save()}"
 
 REM Create start menu shortcut
 echo Creating start menu shortcut...
 if not exist "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Excel Tools" (
     mkdir "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Excel Tools"
 )
-powershell -Command "& {$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%APPDATA%\Microsoft\Windows\Start Menu\Programs\Excel Tools\Excel文件拆分工具.lnk'); $Shortcut.TargetPath = '%INSTALL_DIR%\Excel文件拆分工具.exe'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Description = 'Excel File Split Tool'; $Shortcut.Save()}"
+powershell -Command "& {$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%APPDATA%\Microsoft\Windows\Start Menu\Programs\Excel Tools\ExcelFileSplitTool.lnk'); $Shortcut.TargetPath = '%INSTALL_DIR%\ExcelFileSplitTool.exe'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Description = 'Excel File Split Tool'; $Shortcut.Save()}"
 
 echo.
 echo ==========================================
@@ -113,12 +123,12 @@ echo ==========================================
 echo.
 echo Installation path: %INSTALL_DIR%
 echo Desktop shortcut: Created
-echo Start menu: Excel Tools ^> Excel文件拆分工具
+echo Start menu: Excel Tools ^> Excel File Split Tool
 echo.
 pause
 '@
 
-    # 创建卸载脚本
+    # Create uninstaller script
     $uninstallerScript = @'
 @echo off
 chcp 65001 >nul
@@ -147,8 +157,8 @@ echo Uninstalling...
 
 REM Remove shortcuts
 echo Removing shortcuts...
-del "%USERPROFILE%\Desktop\Excel文件拆分工具.lnk" >nul 2>&1
-del "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Excel Tools\Excel文件拆分工具.lnk" >nul 2>&1
+del "%USERPROFILE%\Desktop\ExcelFileSplitTool.lnk" >nul 2>&1
+del "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Excel Tools\ExcelFileSplitTool.lnk" >nul 2>&1
 rmdir "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Excel Tools" >nul 2>&1
 
 REM Remove program directory
@@ -170,8 +180,9 @@ pause
 '@
 
     try {
-        $installerScript | Out-File -FilePath "dist\install.bat" -Encoding UTF8
-        $uninstallerScript | Out-File -FilePath "dist\uninstall.bat" -Encoding UTF8
+        # Use UTF-8 encoding for batch files
+        [System.IO.File]::WriteAllText((Join-Path "dist" "install.bat"), $installerScript, [System.Text.Encoding]::UTF8)
+        [System.IO.File]::WriteAllText((Join-Path "dist" "uninstall.bat"), $uninstallerScript, [System.Text.Encoding]::UTF8)
         
         Write-ColorMessage "Installer scripts created:" "Green"
         Write-ColorMessage "  - dist\install.bat" "White"
@@ -185,14 +196,14 @@ pause
 Write-ColorMessage "Excel File Split Tool - Build Script" "Green"
 Write-ColorMessage "================================================" "Green"
 
-# 检查是否在正确的目录
+# Check if running from correct directory
 if (-not (Test-Path "src\main.py")) {
     Write-ColorMessage "Error: Please run this script from project root directory" "Red"
     Write-ColorMessage "Make sure src\main.py exists in current directory" "Yellow"
     exit 1
 }
 
-# 检查Python是否安装
+# Check Python installation
 try {
     $pythonVersion = python --version 2>&1
     Write-ColorMessage "Python detected: $pythonVersion" "Cyan"
@@ -203,7 +214,7 @@ catch {
     exit 1
 }
 
-# 虚拟环境管理
+# Virtual environment management
 if (-not $NoVenv) {
     if (Test-Path "venv") {
         Write-ColorMessage "Activating virtual environment..." "Yellow"
@@ -241,7 +252,7 @@ else {
     Write-ColorMessage "Skipping virtual environment, using system Python" "Yellow"
 }
 
-# 检查必要的模块
+# Check required modules
 Write-ColorMessage "Checking required modules..." "Yellow"
 $requiredModules = @("pandas", "openpyxl", "xlrd", "xlsxwriter", "tkinter")
 $missingModules = @()
@@ -265,9 +276,9 @@ if ($missingModules.Count -gt 0) {
     }
 }
 
-# 检查PyInstaller
+# Check PyInstaller
 try {
-    pyinstaller --version | Out-Null
+    $pyinstallerVersion = python -m PyInstaller --version 2>&1
     Write-ColorMessage "PyInstaller detected" "Green"
 }
 catch {
@@ -275,7 +286,7 @@ catch {
     pip install pyinstaller
 }
 
-# 清理之前的构建文件
+# Clean previous build files
 if ($Clean -or (Test-Path "build") -or (Test-Path "dist")) {
     Write-ColorMessage "Cleaning previous build files..." "Yellow"
     if (Test-Path "build") { Remove-Item -Recurse -Force "build" }
@@ -285,26 +296,35 @@ if ($Clean -or (Test-Path "build") -or (Test-Path "dist")) {
     Get-ChildItem -Path "." -Filter "*.spec" | Remove-Item -Force
 }
 
-# 构建可执行文件
+# Build executable
 Write-ColorMessage "Starting build process..." "Yellow"
 
-# 构建参数
+# Use English name to avoid encoding issues
+$appName = "ExcelFileSplitTool"
+
+# Build arguments
 $buildArgs = @(
     "--onefile"
     "--windowed"
-    "--name=Excel文件拆分工具"
+    "--name=$appName"
     "--hidden-import=pandas"
+    "--hidden-import=numpy"
     "--hidden-import=openpyxl"
+    "--hidden-import=openpyxl.workbook"
+    "--hidden-import=openpyxl.worksheet"
     "--hidden-import=xlrd"
     "--hidden-import=xlsxwriter"
     "--hidden-import=tkinter"
     "--hidden-import=tkinter.filedialog"
     "--hidden-import=tkinter.messagebox"
+    "--hidden-import=excel_splitter_gui"
+    "--add-data=src/excel_splitter_gui.py;."
+    "--paths=src"
     "--clean"
     "--noconfirm"
 )
 
-# 检查图标文件
+# Check for icon files
 $iconPaths = @("assets\icon.ico", "icon.ico", "src\icon.ico")
 foreach ($iconPath in $iconPaths) {
     if (Test-Path $iconPath) {
@@ -316,10 +336,15 @@ foreach ($iconPath in $iconPaths) {
 
 $buildArgs += "src\main.py"
 
-# 执行构建
+# Execute build with proper encoding
 try {
-    Write-ColorMessage "Executing: pyinstaller $($buildArgs -join ' ')" "Cyan"
-    & pyinstaller @buildArgs
+    Write-ColorMessage "Executing: python -m PyInstaller $($buildArgs -join ' ')" "Cyan"
+    
+    # Set environment variables for proper encoding
+    $env:PYTHONIOENCODING = "utf-8"
+    $env:PYTHONUTF8 = "1"
+    
+    & python -m PyInstaller @buildArgs
     
     if ($LASTEXITCODE -ne 0) {
         throw "PyInstaller failed with exit code: $LASTEXITCODE"
@@ -330,15 +355,15 @@ catch {
     exit 1
 }
 
-# 检查构建结果
-$exeName = "Excel文件拆分工具.exe"
+# Check build result
+$exeName = "$appName.exe"
 $exePath = "dist\$exeName"
 
 if (Test-Path $exePath) {
     Write-ColorMessage "Build successful!" "Green"
     Write-ColorMessage "Executable location: $exePath" "Green"
     
-    # 获取文件信息
+    # Get file information
     $fileInfo = Get-Item $exePath
     $fileSize = [math]::Round($fileInfo.Length / 1MB, 2)
     $buildTime = $fileInfo.CreationTime
@@ -346,25 +371,25 @@ if (Test-Path $exePath) {
     Write-ColorMessage "File size: ${fileSize}MB" "Cyan"
     Write-ColorMessage "Build time: $buildTime" "Cyan"
     
-    # 开发模式信息
+    # Development mode information
     if ($Dev) {
         Write-ColorMessage "`nDevelopment Info:" "Cyan"
         Write-ColorMessage "Working Directory: $(Get-Location)" "White"
         Write-ColorMessage "Python Version: $(python --version)" "White"
         Write-ColorMessage "PyInstaller Version: $(pyinstaller --version)" "White"
+        Write-ColorMessage "Console Encoding: $([Console]::OutputEncoding.EncodingName)" "White"
     }
     
-    # 创建安装脚本
+    # Create installer scripts
     if ($CreateInstaller) {
         New-InstallerScript
     }
     
-    # 创建桌面快捷方式
+    # Create desktop shortcut
     $createShortcut = Read-Host "Create desktop shortcut? (y/N)"
     if ($createShortcut -eq "y" -or $createShortcut -eq "Y") {
-        New-DesktopShortcut -TargetPath $exePath -ShortcutName "Excel文件拆分工具"
+        New-DesktopShortcut -TargetPath $exePath -ShortcutName "Excel File Split Tool"
     }
-    
 }
 else {
     Write-ColorMessage "Build failed - executable not found" "Red"
@@ -373,6 +398,7 @@ else {
 }
 
 Write-ColorMessage "`nBuild Complete!" "Green"
+Write-ColorMessage "================================================" "Green"
 Write-ColorMessage "Usage:" "Cyan"
 Write-ColorMessage "1. Double-click: $exePath" "White"
 Write-ColorMessage "2. PowerShell: & '$exePath'" "White"
@@ -380,7 +406,7 @@ if ($CreateInstaller) {
     Write-ColorMessage "3. Install system-wide: Right-click dist\install.bat -> Run as administrator" "White"
 }
 
-# 询问是否立即测试
+# Test run option
 $testNow = Read-Host "`nTest run the application now? (y/N)"
 if ($testNow -eq "y" -or $testNow -eq "Y") {
     Write-ColorMessage "Starting application for testing..." "Yellow"
@@ -393,4 +419,4 @@ if ($testNow -eq "y" -or $testNow -eq "Y") {
     }
 }
 
-Write-ColorMessage "`nBuild script completed!" "Green"
+Write-ColorMessage "`nBuild script completed successfully!" "Green"
