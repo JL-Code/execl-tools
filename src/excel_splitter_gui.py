@@ -16,12 +16,36 @@ class ExcelSplitterGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Excel文件拆分工具")
-        self.root.geometry("600x400")
+        self.root.geometry("800x650")
         self.root.resizable(True, True)
+        self.root.minsize(750, 600)
         
         # 设置样式
         self.style = ttk.Style()
         self.style.theme_use('clam')
+        
+        # 配置自定义样式
+        self.style.configure('Title.TLabel', font=('Arial', 18, 'bold'), foreground='#2c3e50')
+        self.style.configure('Heading.TLabel', font=('Arial', 10, 'bold'), foreground='#34495e')
+        self.style.configure('Accent.TButton', font=('Arial', 11, 'bold'))
+        self.style.map('Accent.TButton', 
+                      background=[('active', '#27ae60'), ('!active', '#2ecc71')],
+                      foreground=[('active', 'white'), ('!active', 'white')])
+        self.style.configure('Secondary.TButton', font=('Arial', 10))
+        self.style.map('Secondary.TButton',
+                      background=[('active', '#95a5a6'), ('!active', '#bdc3c7')],
+                      foreground=[('active', '#2c3e50'), ('!active', '#2c3e50')])
+        
+        # 配置进度条样式
+        self.style.configure('TProgressbar', 
+                           background='#3498db',
+                           troughcolor='#ecf0f1',
+                           borderwidth=0,
+                           lightcolor='#3498db',
+                           darkcolor='#3498db')
+        
+        # 设置整体背景色
+        self.root.configure(bg='#ecf0f1')
         
         # 变量
         self.input_file_path = tk.StringVar()
@@ -36,47 +60,57 @@ class ExcelSplitterGUI:
     def setup_ui(self):
         """设置用户界面"""
         # 主框架
-        main_frame = ttk.Frame(self.root, padding="20")
+        main_frame = ttk.Frame(self.root, padding="25")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # 配置网格权重
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
+        main_frame.rowconfigure(4, weight=1)  # 让文件信息区域可以扩展
         
         # 标题
         title_label = ttk.Label(main_frame, text="Excel文件拆分工具", 
-                               font=('Arial', 16, 'bold'))
-        title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20))
+                               style='Title.TLabel')
+        title_label.grid(row=0, column=0, columnspan=3, pady=(0, 30))
         
         # 输入文件选择
-        ttk.Label(main_frame, text="选择Excel文件:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        ttk.Entry(main_frame, textvariable=self.input_file_path, width=50).grid(
-            row=1, column=1, sticky=(tk.W, tk.E), padx=(10, 5), pady=5)
-        ttk.Button(main_frame, text="浏览", command=self.browse_input_file).grid(
-            row=1, column=2, pady=5)
+        ttk.Label(main_frame, text="选择Excel文件:", style='Heading.TLabel').grid(
+            row=1, column=0, sticky=tk.W, pady=(0, 10))
+        input_entry = ttk.Entry(main_frame, textvariable=self.input_file_path, 
+                               width=60, font=('Arial', 10))
+        input_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(15, 10), pady=(0, 10))
+        ttk.Button(main_frame, text="浏览", command=self.browse_input_file,
+                  style='Secondary.TButton').grid(row=1, column=2, pady=(0, 10))
         
         # 每个文件行数设置
-        ttk.Label(main_frame, text="每个小文件行数:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        rows_entry = ttk.Entry(main_frame, textvariable=self.rows_per_file, width=20)
-        rows_entry.grid(row=2, column=1, sticky=tk.W, padx=(10, 0), pady=5)
+        ttk.Label(main_frame, text="每个小文件行数:", style='Heading.TLabel').grid(
+            row=2, column=0, sticky=tk.W, pady=(0, 10))
+        rows_entry = ttk.Entry(main_frame, textvariable=self.rows_per_file, 
+                              width=25, font=('Arial', 10))
+        rows_entry.grid(row=2, column=1, sticky=tk.W, padx=(15, 0), pady=(0, 10))
         
         # 绑定行数输入框的变化事件
         self.rows_per_file.trace_add('write', self.on_rows_changed)
         
         # 输出目录选择
-        ttk.Label(main_frame, text="输出目录:").grid(row=3, column=0, sticky=tk.W, pady=5)
-        ttk.Entry(main_frame, textvariable=self.output_dir, width=50).grid(
-            row=3, column=1, sticky=(tk.W, tk.E), padx=(10, 5), pady=5)
-        ttk.Button(main_frame, text="浏览", command=self.browse_output_dir).grid(
-            row=3, column=2, pady=5)
+        ttk.Label(main_frame, text="输出目录:", style='Heading.TLabel').grid(
+            row=3, column=0, sticky=tk.W, pady=(0, 15))
+        output_entry = ttk.Entry(main_frame, textvariable=self.output_dir, 
+                                width=60, font=('Arial', 10))
+        output_entry.grid(row=3, column=1, sticky=(tk.W, tk.E), padx=(15, 10), pady=(0, 15))
+        ttk.Button(main_frame, text="浏览", command=self.browse_output_dir,
+                  style='Secondary.TButton').grid(row=3, column=2, pady=(0, 15))
         
         # 文件信息显示区域
-        info_frame = ttk.LabelFrame(main_frame, text="文件信息", padding="10")
-        info_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=20)
+        info_frame = ttk.LabelFrame(main_frame, text="文件信息", padding="15")
+        info_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 20))
         info_frame.columnconfigure(0, weight=1)
+        info_frame.rowconfigure(0, weight=1)
         
-        self.info_text = tk.Text(info_frame, height=6, width=70, wrap=tk.WORD)
+        self.info_text = tk.Text(info_frame, height=8, width=80, wrap=tk.WORD,
+                                font=('Consolas', 10), bg='#f8f9fa', fg='#2c3e50',
+                                relief=tk.FLAT, borderwidth=1)
         scrollbar = ttk.Scrollbar(info_frame, orient=tk.VERTICAL, command=self.info_text.yview)
         self.info_text.configure(yscrollcommand=scrollbar.set)
         
@@ -86,19 +120,21 @@ class ExcelSplitterGUI:
         # 进度条
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(main_frame, variable=self.progress_var, 
-                                          maximum=100, length=400)
-        self.progress_bar.grid(row=5, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+                                          maximum=100, length=500)
+        self.progress_bar.grid(row=5, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 20))
         
         # 按钮区域
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=6, column=0, columnspan=3, pady=20)
+        button_frame.grid(row=6, column=0, columnspan=3, pady=(0, 10))
         
         self.split_button = ttk.Button(button_frame, text="开始拆分", 
-                                     command=self.start_split, style='Accent.TButton')
-        self.split_button.pack(side=tk.LEFT, padx=10)
+                                     command=self.start_split, style='Accent.TButton',
+                                     width=15)
+        self.split_button.pack(side=tk.LEFT, padx=(0, 15))
         
-        ttk.Button(button_frame, text="清空信息", command=self.clear_info).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="退出", command=self.root.quit).pack(side=tk.LEFT, padx=10)
+        clear_button = ttk.Button(button_frame, text="清空信息", command=self.clear_info,
+                                 style='Secondary.TButton', width=12)
+        clear_button.pack(side=tk.LEFT)
         
         # 初始化信息
         self.add_info("欢迎使用Excel文件拆分工具！")
