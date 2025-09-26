@@ -22,7 +22,7 @@ fi
 
 # 清理之前的构建文件
 echo "🧹 清理之前的构建文件..."
-rm -rf build dist *.spec src/__pycache__ __pycache__
+rm -rf build dist src/__pycache__ __pycache__
 
 # 构建可执行文件
 echo "🔨 开始构建可执行文件..."
@@ -32,13 +32,13 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "📱 检测到macOS系统，构建.app应用程序..."
     pyinstaller excel_splitter.spec
     
-    if [ -f "dist/Excel文件拆分工具.app/Contents/MacOS/Excel文件拆分工具" ]; then
+    if [ -f "dist/excel_splitter.app/Contents/MacOS/excel_splitter" ]; then
         echo "✅ macOS应用程序构建成功！"
-        echo "📦 应用程序位置: dist/Excel文件拆分工具.app"
+        echo "📦 应用程序位置: dist/excel_splitter.app"
         
         # 创建DMG安装包
         echo "📦 创建DMG安装包..."
-        hdiutil create -volname "Excel文件拆分工具" -srcfolder "dist/Excel文件拆分工具.app" -ov -format UDZO "dist/Excel文件拆分工具.dmg"
+        hdiutil create -volname "Excel文件拆分工具" -srcfolder "dist/excel_splitter.app" -ov -format UDZO "dist/Excel文件拆分工具.dmg"
         echo "✅ DMG安装包创建完成: dist/Excel文件拆分工具.dmg"
     else
         echo "❌ 应用程序构建失败"
