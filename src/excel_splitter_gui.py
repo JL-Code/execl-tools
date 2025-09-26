@@ -10,6 +10,8 @@ import pandas as pd
 import os
 from pathlib import Path
 import threading
+import subprocess
+import platform
 
 
 class ExcelSplitterGUI:
@@ -134,7 +136,14 @@ class ExcelSplitterGUI:
         
         clear_button = ttk.Button(button_frame, text="清空信息", command=self.clear_info,
                                  style='Secondary.TButton', width=12)
-        clear_button.pack(side=tk.LEFT)
+        clear_button.pack(side=tk.LEFT, padx=(0, 15))
+        
+        self.open_folder_button = ttk.Button(button_frame, text="打开输出目录", 
+                                           command=self.open_output_folder,
+                                           style='Secondary.TButton', width=15)
+        self.open_folder_button.pack(side=tk.LEFT)
+        # 初始状态下禁用按钮，直到有输出目录
+        self.open_folder_button.config(state='disabled')
         
         # 初始化信息
         self.add_info("欢迎使用Excel文件拆分工具！")
@@ -151,6 +160,7 @@ class ExcelSplitterGUI:
             # 自动设置输出目录为输入文件所在目录
             if not self.output_dir.get():
                 self.output_dir.set(os.path.dirname(file_path))
+                self.open_folder_button.config(state='enabled')
             self.analyze_file()
     
     def browse_output_dir(self):
@@ -158,6 +168,8 @@ class ExcelSplitterGUI:
         dir_path = filedialog.askdirectory(title="选择输出目录")
         if dir_path:
             self.output_dir.set(dir_path)
+            # 当选择了输出目录后，启用打开目录按钮
+            self.open_folder_button.config(state='normal')
     
     def analyze_file(self):
         """分析选中的Excel文件"""
@@ -226,8 +238,11 @@ class ExcelSplitterGUI:
         self.root.update_idletasks()
     
     def clear_info(self):
-        """清空信息显示区域"""
+        """清空信息显示"""
         self.info_text.delete(1.0, tk.END)
+        # 清空信息时也禁用打开目录按钮
+        if not self.output_dir.get():
+            self.open_folder_button.config(state='disabled')
     
     def start_split(self):
         """开始拆分文件"""
@@ -320,6 +335,30 @@ class ExcelSplitterGUI:
         finally:
             self.split_button.config(state='normal')
             self.progress_var.set(0)
+    
+    def open_output_folder(self):
+        """打开输出文件夹"""
+        output_path = self.output_dir.get()
+        
+        if not output_path:
+            messagebox.showwarning("警告", "请先选择输出目录")
+            return
+        
+        if not os.path.exists(output_path):
+            messagebox.showerror("错误", "输出目录不存在")
+            return
+        
+        try:
+            # 根据操作系统选择合适的命令打开文件夹
+            system = platform.system()
+            if system == "Windows":
+                os.startfile(output_path)
+            elif system == "Darwin":  # macOS
+                subprocess.run(["open", output_path])
+            else:  # Linux and other Unix-like systems
+                subprocess.run(["xdg-open", output_path])
+        except Exception as e:
+            messagebox.showerror("错误", f"无法打开文件夹: {str(e)}")
 
 
 def main():
