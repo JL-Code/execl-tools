@@ -302,26 +302,51 @@ Write-ColorMessage "Starting build process..." "Yellow"
 # Use English name to avoid encoding issues
 $appName = "ExcelFileSplitTool"
 
-# Build arguments
+# Build arguments with enhanced compatibility
 $buildArgs = @(
     "--onefile"
     "--windowed"
     "--name=$appName"
+    # Core dependencies
     "--hidden-import=pandas"
     "--hidden-import=numpy"
     "--hidden-import=openpyxl"
     "--hidden-import=openpyxl.workbook"
     "--hidden-import=openpyxl.worksheet"
+    "--hidden-import=openpyxl.reader.excel"
+    "--hidden-import=openpyxl.writer.excel"
     "--hidden-import=xlrd"
     "--hidden-import=xlsxwriter"
+    # Tkinter and GUI
     "--hidden-import=tkinter"
     "--hidden-import=tkinter.filedialog"
     "--hidden-import=tkinter.messagebox"
+    "--hidden-import=tkinter.ttk"
+    # System and encoding
+    "--hidden-import=encodings"
+    "--hidden-import=encodings.utf_8"
+    "--hidden-import=encodings.cp1252"
+    "--hidden-import=encodings.latin1"
+    # Date and time
+    "--hidden-import=datetime"
+    "--hidden-import=dateutil"
+    "--hidden-import=dateutil.parser"
+    # File operations
+    "--hidden-import=os"
+    "--hidden-import=sys"
+    "--hidden-import=subprocess"
+    "--hidden-import=platform"
+    # Application modules
     "--hidden-import=excel_splitter_gui"
-    "--add-data=src/excel_splitter_gui.py;."
+    # Data files
+    "--add-data=src;src"
     "--paths=src"
+    # Build options
     "--clean"
     "--noconfirm"
+    "--noupx"
+    # Runtime options for better compatibility
+    "--runtime-tmpdir=."
 )
 
 # Check for icon files
@@ -336,22 +361,53 @@ foreach ($iconPath in $iconPaths) {
 
 $buildArgs += "src\main.py"
 
-# Execute build with proper encoding
+# Execute build with proper encoding and enhanced error handling
 try {
     Write-ColorMessage "Executing: python -m PyInstaller $($buildArgs -join ' ')" "Cyan"
     
-    # Set environment variables for proper encoding
+    # Set environment variables for proper encoding and compatibility
     $env:PYTHONIOENCODING = "utf-8"
     $env:PYTHONUTF8 = "1"
+    $env:PYTHONHASHSEED = "1"
+    $env:PYTHONDONTWRITEBYTECODE = "1"
+    
+    # Clear any existing PyInstaller cache
+    if (Test-Path "$env:APPDATA\pyinstaller") {
+        Remove-Item -Recurse -Force "$env:APPDATA\pyinstaller" -ErrorAction SilentlyContinue
+    }
     
     & python -m PyInstaller @buildArgs
     
     if ($LASTEXITCODE -ne 0) {
         throw "PyInstaller failed with exit code: $LASTEXITCODE"
     }
+    
+    # Additional verification
+    $exeName = "$appName.exe"
+    $exePath = "dist\$exeName"
+    
+    if (-not (Test-Path $exePath)) {
+        throw "Executable was not created successfully"
+    }
+    
+    # Check if the executable is valid
+    try {
+        $fileInfo = Get-Item $exePath
+        if ($fileInfo.Length -lt 1MB) {
+            Write-ColorMessage "Warning: Executable size is unusually small ($([math]::Round($fileInfo.Length / 1KB, 2))KB)" "Yellow"
+        }
+    }
+    catch {
+        Write-ColorMessage "Warning: Could not verify executable properties" "Yellow"
+    }
 }
 catch {
     Write-ColorMessage "Build failed: $($_.Exception.Message)" "Red"
+    Write-ColorMessage "Troubleshooting tips:" "Yellow"
+    Write-ColorMessage "1. Try running with -Clean parameter" "White"
+    Write-ColorMessage "2. Check if antivirus is blocking the build" "White"
+    Write-ColorMessage "3. Ensure all dependencies are properly installed" "White"
+    Write-ColorMessage "4. Try building without virtual environment (-NoVenv)" "White"
     exit 1
 }
 
