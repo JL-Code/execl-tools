@@ -101,6 +101,69 @@ cd execl-tools
 - 建议在拆分前备份原始文件
 - 如果遇到权限问题，请确保对输出目录有写入权限
 
+## 打包为可执行文件
+
+本项目提供了完整的打包解决方案，可以将应用程序打包为独立的可执行文件。
+
+### 自动构建（推荐）
+
+使用提供的构建脚本一键打包：
+
+```bash
+# 运行构建脚本
+./build.sh
+```
+
+构建脚本会自动：
+- 激活虚拟环境
+- 清理之前的构建文件
+- 使用PyInstaller打包应用程序
+- 在macOS上创建.app应用程序包和DMG安装包
+- 在Linux上创建可执行文件和桌面文件
+
+### 手动构建
+
+如果需要自定义构建选项：
+
+```bash
+# 激活虚拟环境
+source venv/bin/activate
+
+# 安装PyInstaller
+pip install pyinstaller
+
+# 使用spec文件构建（推荐）
+pyinstaller excel_splitter.spec
+
+# 或者直接构建
+pyinstaller --onefile --windowed --name="Excel文件拆分工具" \
+            --hidden-import=pandas --hidden-import=openpyxl \
+            --hidden-import=xlrd --hidden-import=xlsxwriter \
+            --hidden-import=tkinter src/main.py
+```
+
+### 构建输出
+
+构建完成后，在`dist/`目录中会生成：
+
+**macOS:**
+- `Excel文件拆分工具.app` - 应用程序包
+- `Excel文件拆分工具.dmg` - DMG安装包（如果使用构建脚本）
+
+**Linux:**
+- `Excel文件拆分工具` - 可执行文件
+- `excel-splitter.desktop` - 桌面文件（如果使用构建脚本）
+
+**Windows:**
+- `Excel文件拆分工具.exe` - 可执行文件
+
+### 构建配置
+
+项目包含以下构建相关文件：
+- `build.sh` - Shell构建脚本（macOS/Linux）
+- `build.py` - Python构建脚本（跨平台）
+- `excel_splitter.spec` - PyInstaller配置文件
+
 ## 开发
 
 如果你想参与开发或自定义功能：

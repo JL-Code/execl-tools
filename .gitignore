@@ -32,6 +32,9 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+# 但是保留项目特定的spec文件
+!excel_splitter.spec
+!Excel文件拆分工具.spec
 
 # Installer logs
 pip-log.txt
